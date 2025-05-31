@@ -27,10 +27,10 @@
 
   <script>
     async function fetchSchedule() {
-      const url = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=tkl&sta=LHP"; // ✅ 改為大寫 LHP
+      const url = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=tkl&sta=LHP";
       const res = await fetch(url);
       const json = await res.json();
-      console.log("MTR API response:", json);
+      console.log("MTR API response:", json);  // 可保留除錯用
       return json.data;
     }
 
@@ -38,18 +38,18 @@
       const tbody = document.querySelector("#lhpTable tbody");
       tbody.innerHTML = '';
 
-      if (!data || Object.keys(data).length === 0) {
-        tbody.innerHTML = '<tr><td colspan="2">無資料</td></tr>';
+      const key = "TKL-LHP";
+      const trains = data[key]?.DOWN;
+
+      if (!Array.isArray(trains) || trains.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="2">⚠️ 暫時沒有即時班次資料</td></tr>';
         return;
       }
 
-      Object.values(data).forEach(trains => {
-        if (!Array.isArray(trains)) return;
-        trains.forEach(train => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `<td>${train.dest}</td><td>${train.ttnt}</td>`;
-          tbody.appendChild(tr);
-        });
+      trains.forEach(train => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${train.dest}</td><td>${train.ttnt} 分鐘</td>`;
+        tbody.appendChild(tr);
       });
     }
 
@@ -63,7 +63,6 @@
         console.error("Fetch error:", err);
       }
     }
-
 
     loadSchedule();
   </script>
