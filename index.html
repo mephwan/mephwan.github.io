@@ -30,6 +30,7 @@
       const url = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=tkl&sta=LHP"; // ✅ 改為大寫 LHP
       const res = await fetch(url);
       const json = await res.json();
+      console.log("MTR API response:", json);
       return json.data;
     }
 
@@ -62,6 +63,7 @@
         console.error("Fetch error:", err);
       }
     }
+
 
     loadSchedule();
   </script>
