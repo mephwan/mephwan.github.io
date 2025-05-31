@@ -27,7 +27,7 @@
 
   <script>
     async function fetchSchedule() {
-      const url = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=tkl&sta=lhp"; // ✅ lhp 要小寫
+      const url = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=tik&sta=lhp"; // ✅ lhp 要小寫
       const res = await fetch(url);
       const json = await res.json();
       return json.data;
