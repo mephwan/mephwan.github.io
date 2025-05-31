@@ -3,24 +3,70 @@
 <head>
   <meta charset="UTF-8">
   <title>港鐵即時班次｜康城</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 手機適配 -->
   <style>
-    body { font-family: sans-serif; padding: 20px; background: #f9f9f9; }
-    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    th { background-color: #f0f0f0; }
-    button { padding: 10px 16px; margin-bottom: 20px; }
+    body {
+      font-family: sans-serif;
+      padding: 16px;
+      background: #f9f9f9;
+      font-size: 18px; /* 整體放大 */
+      line-height: 1.5;
+    }
+
+    h1 {
+      font-size: 22px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 12px;
+      font-size: 18px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #f0f0f0;
+      font-weight: bold;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      font-size: 18px;
+      padding: 12px;
+      margin: 10px 0;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
   </style>
 </head>
 <body>
 
   <h1>康城站｜港鐵即時班次</h1>
 
+  <button onclick="loadSchedule()">🔄 手動重新載入</button>
+
   <table id="lhpTable">
     <thead>
-      <tr><th>目的地</th><th>尚餘時間 (分鐘)</th><th>開出時間</th></tr>
+      <tr><th>目的地</th><th>尚餘時間</th><th>開出時間</th></tr>
     </thead>
     <tbody>
-      <tr><td colspan="3">載入中...</td></tr>
+      <tr><td colspan="3">📡 載入中...</td></tr>
     </tbody>
   </table>
 
