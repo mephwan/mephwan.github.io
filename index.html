@@ -14,14 +14,14 @@
 <body>
 
   <h1>康城站（LHP）｜港鐵即時班次</h1>
-  <button onclick="loadSchedule()">🔄 重新載入</button>
+  <button onclick="loadSchedule()">🔄 手動重新載入</button>
 
   <table id="lhpTable">
     <thead>
-      <tr><th>目的地</th><th>開出時間 (ttnt)</th></tr>
+      <tr><th>目的地</th><th>尚餘時間 (分鐘)</th><th>開出時間</th></tr>
     </thead>
     <tbody>
-      <tr><td colspan="2">載入中...</td></tr>
+      <tr><td colspan="3">載入中...</td></tr>
     </tbody>
   </table>
 
@@ -30,36 +30,40 @@
       const url = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=tkl&sta=LHP";
       const res = await fetch(url);
       const json = await res.json();
-      console.log("MTR API response:", json);  // 可保留除錯用
       return json.data;
     }
 
-function renderTable(data) {
-  const tbody = document.querySelector("#lhpTable tbody");
-  tbody.innerHTML = '';
+    function renderTable(data) {
+      const tbody = document.querySelector("#lhpTable tbody");
+      tbody.innerHTML = '';
 
-  const key = "TKL-LHP";
-  const trains = data[key]?.DOWN;
+      const key = "TKL-LHP";
+      const trains = data[key]?.DOWN;
 
-  if (!Array.isArray(trains) || trains.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="2">⚠️ 暫時沒有即時班次資料</td></tr>';
-    return;
-  }
+      if (!Array.isArray(trains) || trains.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3">⚠️ 暫時沒有即時班次資料</td></tr>';
+        return;
+      }
 
-  // 目的地顯示轉換對照表
-  const destMap = {
-    TIK: "TIK 調景嶺",
-    NOP: "NOP 北角"
-    // 其他站可視需要再補充
-  };
+      const destMap = {
+        TIK: "TIK 調景嶺",
+        NOP: "NOP 北角"
+      };
 
-  trains.forEach(train => {
-    const destDisplay = destMap[train.dest] || train.dest; // 預設用原本名稱
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${destDisplay}</td><td>${train.ttnt} 分鐘</td>`;
-    tbody.appendChild(tr);
-  });
-}
+      trains.forEach(train => {
+        const destDisplay = destMap[train.dest] || train.dest;
+        const time = train.time || "--";
+        const ttnt = train.ttnt || "--";
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${destDisplay}</td>
+          <td>${ttnt} 分鐘</td>
+          <td>${time}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
 
     async function loadSchedule() {
       try {
@@ -67,12 +71,14 @@ function renderTable(data) {
         renderTable(data);
       } catch (err) {
         document.querySelector("#lhpTable tbody").innerHTML =
-          `<tr><td colspan="2">❌ 無法載入資料</td></tr>`;
+          `<tr><td colspan="3">❌ 無法載入資料</td></tr>`;
         console.error("Fetch error:", err);
       }
     }
 
+    // 自動每 5 秒刷新
     loadSchedule();
+    setInterval(loadSchedule, 5000);
   </script>
 
 </body>
