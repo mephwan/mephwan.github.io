@@ -5,33 +5,36 @@
   <title>港鐵即時班次｜康城</title>
   <style>
     body { font-family: sans-serif; padding: 20px; background: #f9f9f9; }
-    h1 { margin-bottom: 5px; }
-    table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
     th { background-color: #f0f0f0; }
-    button { margin-bottom: 20px; padding: 8px 16px; }
+    button { padding: 10px 16px; margin-bottom: 20px; }
   </style>
 </head>
 <body>
 
-  <h2>康城站（LHP）</h2>
+  <h1>康城站（LHP）｜港鐵即時班次</h1>
+  <button onclick="loadSchedule()">🔄 重新載入</button>
+
   <table id="lhpTable">
     <thead>
       <tr><th>目的地</th><th>開出時間 (ttnt)</th></tr>
     </thead>
-    <tbody></tbody>
+    <tbody>
+      <tr><td colspan="2">載入中...</td></tr>
+    </tbody>
   </table>
 
   <script>
-    async function fetchSchedule(stationCode) {
-      const url = `https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=tkl&sta=LHP`;
+    async function fetchSchedule() {
+      const url = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=tkl&sta=lhp";
       const res = await fetch(url);
       const json = await res.json();
       return json.data;
     }
 
-    function renderTable(tableId, data) {
-      const tbody = document.querySelector(`#${tableId} tbody`);
+    function renderTable(data) {
+      const tbody = document.querySelector("#lhpTable tbody");
       tbody.innerHTML = '';
 
       if (!data || Object.keys(data).length === 0) {
@@ -41,29 +44,27 @@
 
       Object.values(data).forEach(trains => {
         trains.forEach(train => {
-          const tr = document.createElement('tr');
+          const tr = document.createElement("tr");
           tr.innerHTML = `<td>${train.dest}</td><td>${train.ttnt}</td>`;
           tbody.appendChild(tr);
         });
       });
     }
 
-    async function loadSchedules() {
+    async function loadSchedule() {
       try {
-        const [tilData, lhpData] = await Promise.all([
-          fetchSchedule('til'),
-          fetchSchedule('lhp')
-        ]);
-        renderTable('tilTable', tilData);
-        renderTable('lhpTable', lhpData);
-      } catch (error) {
-        alert('❌ 載入失敗，請稍後再試。');
-        console.error(error);
+        const data = await fetchSchedule();
+        renderTable(data);
+      } catch (err) {
+        document.querySelector("#lhpTable tbody").innerHTML =
+          `<tr><td colspan="2">❌ 無法載入資料</td></tr>`;
+        console.error(err);
       }
     }
 
-    // 初始載入
-    loadSchedules();
+    // Auto-load on page load
+    loadSchedule();
   </script>
+
 </body>
 </html>
