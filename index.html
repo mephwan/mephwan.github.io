@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>港鐵即時班次｜調景嶺 & 康城</title>
+  <title>港鐵即時班次｜康城</title>
   <style>
     body { font-family: sans-serif; padding: 20px; background: #f9f9f9; }
     h1 { margin-bottom: 5px; }
@@ -13,17 +13,6 @@
   </style>
 </head>
 <body>
-  <h1>🚇 港鐵將軍澳線即時班次</h1>
-  <p>資料來源：<a href="https://data.gov.hk/en-data/dataset/hk-td-mtrrd-en" target="_blank">政府資料開放平台</a></p>
-  <button onclick="loadSchedules()">🔄 重新載入</button>
-
-  <h2>調景嶺站（TIL）</h2>
-  <table id="tilTable">
-    <thead>
-      <tr><th>目的地</th><th>開出時間 (ttnt)</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
 
   <h2>康城站（LHP）</h2>
   <table id="lhpTable">
@@ -35,7 +24,7 @@
 
   <script>
     async function fetchSchedule(stationCode) {
-      const url = `https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=tkl&sta=${stationCode}`;
+      const url = `https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=tkl&sta=LHP`;
       const res = await fetch(url);
       const json = await res.json();
       return json.data;
