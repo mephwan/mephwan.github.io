@@ -27,7 +27,7 @@
 
   <script>
     async function fetchSchedule() {
-      const url = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=tkl&sta=lhp"; // ✅ lhp 要小寫
+      const url = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=tkl&sta=LHP"; // ✅ 改為大寫 LHP
       const res = await fetch(url);
       const json = await res.json();
       return json.data;
@@ -43,6 +43,7 @@
       }
 
       Object.values(data).forEach(trains => {
+        if (!Array.isArray(trains)) return;
         trains.forEach(train => {
           const tr = document.createElement("tr");
           tr.innerHTML = `<td>${train.dest}</td><td>${train.ttnt}</td>`;
