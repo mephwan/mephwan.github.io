@@ -52,8 +52,8 @@
 
       trains.forEach(train => {
         const destDisplay = destMap[train.dest] || train.dest;
-        const time = train.time || "--";
-        const ttnt = (train.time || "").split(" ")[1] || "--";
+        const time = (train.time || "").split(" ")[1] || "--";
+        const ttnt = train.ttnt || "--";
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
