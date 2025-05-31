@@ -79,7 +79,7 @@
 
   <table id="lhpTable">
     <thead>
-      <tr><th>目的地</th><th>尚餘時間</th><th>開出時間</th></tr>
+      <tr><th>目的地</th><th>尚餘時間</th><th>預計開出時間</th></tr>
     </thead>
     <tbody>
       <tr><td colspan="3">📡 載入中...</td></tr>
@@ -113,7 +113,8 @@
 
       trains.forEach(train => {
         const destDisplay = destMap[train.dest] || train.dest;
-        const time = (train.time || "").split(" ")[1] || "--";
+        const fullTime = (train.time || "").split(" ")[1] || "--:--";
+        const time = fullTime.slice(0, 5);
         const ttnt = train.ttnt || "--";
 
         const tr = document.createElement("tr");
