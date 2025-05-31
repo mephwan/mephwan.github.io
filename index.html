@@ -27,7 +27,7 @@
 
   <script>
     async function fetchSchedule() {
-      const url = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=tkl&sta=lhp";
+      const url = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=tkl&sta=lhp"; // ✅ lhp 要小寫
       const res = await fetch(url);
       const json = await res.json();
       return json.data;
@@ -58,11 +58,10 @@
       } catch (err) {
         document.querySelector("#lhpTable tbody").innerHTML =
           `<tr><td colspan="2">❌ 無法載入資料</td></tr>`;
-        console.error(err);
+        console.error("Fetch error:", err);
       }
     }
 
-    // Auto-load on page load
     loadSchedule();
   </script>
 
