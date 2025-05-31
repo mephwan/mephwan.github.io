@@ -34,24 +34,32 @@
       return json.data;
     }
 
-    function renderTable(data) {
-      const tbody = document.querySelector("#lhpTable tbody");
-      tbody.innerHTML = '';
+function renderTable(data) {
+  const tbody = document.querySelector("#lhpTable tbody");
+  tbody.innerHTML = '';
 
-      const key = "TKL-LHP";
-      const trains = data[key]?.DOWN;
+  const key = "TKL-LHP";
+  const trains = data[key]?.DOWN;
 
-      if (!Array.isArray(trains) || trains.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="2">⚠️ 暫時沒有即時班次資料</td></tr>';
-        return;
-      }
+  if (!Array.isArray(trains) || trains.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="2">⚠️ 暫時沒有即時班次資料</td></tr>';
+    return;
+  }
 
-      trains.forEach(train => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${train.dest}</td><td>${train.ttnt} 分鐘</td>`;
-        tbody.appendChild(tr);
-      });
-    }
+  // 目的地顯示轉換對照表
+  const destMap = {
+    TIK: "TIK 調景嶺",
+    NOP: "NOP 北角"
+    // 其他站可視需要再補充
+  };
+
+  trains.forEach(train => {
+    const destDisplay = destMap[train.dest] || train.dest; // 預設用原本名稱
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${destDisplay}</td><td>${train.ttnt} 分鐘</td>`;
+    tbody.appendChild(tr);
+  });
+}
 
     async function loadSchedule() {
       try {
