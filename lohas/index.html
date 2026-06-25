@@ -427,9 +427,80 @@
         justify-content: flex-start;
       }
 
+      .route-map {
+        padding: 10px 0 12px;
+        scroll-padding-inline: 16px;
+      }
+
+      .map-canvas {
+        width: 1040px;
+        min-width: 1040px;
+      }
+
+      .station-button {
+        min-width: 34px;
+        padding: 2px 4px;
+        font-size: 10px;
+      }
+
       .direction-block + .direction-block {
         border-left: 0;
         border-top: 1px solid var(--line);
+      }
+
+      .direction-head {
+        min-height: 48px;
+        padding: 10px 12px;
+      }
+
+      .direction-head h3 {
+        font-size: 20px;
+      }
+
+      .direction-note {
+        font-size: 13px;
+      }
+
+      .schedule-grid .table-wrap {
+        min-height: 0;
+        overflow-x: visible;
+      }
+
+      .schedule-grid table {
+        min-width: 0;
+        table-layout: fixed;
+      }
+
+      .schedule-grid th,
+      .schedule-grid td {
+        padding: 9px 6px;
+        font-size: 14px;
+      }
+
+      .schedule-grid th:nth-child(1),
+      .schedule-grid td:nth-child(1) {
+        width: 35%;
+      }
+
+      .schedule-grid th:nth-child(2),
+      .schedule-grid td:nth-child(2) {
+        width: 13%;
+        text-align: center;
+      }
+
+      .schedule-grid th:nth-child(3),
+      .schedule-grid td:nth-child(3) {
+        width: 24%;
+      }
+
+      .schedule-grid th:nth-child(4),
+      .schedule-grid td:nth-child(4) {
+        width: 28%;
+        white-space: nowrap;
+      }
+
+      .schedule-grid .numeric {
+        font-size: 17px;
       }
 
       h2 {
@@ -757,6 +828,23 @@
       routeMap.appendChild(canvas);
     }
 
+    function isMobileView() {
+      return window.matchMedia("(max-width: 760px)").matches;
+    }
+
+    function focusMapOnStation(station, immediate = false) {
+      if (!station || !isMobileView()) return;
+
+      const button = routeMap.querySelector(`.station-button[data-line="${station.line}"][data-code="${station.code}"]`);
+      if (!button) return;
+
+      const targetLeft = button.offsetLeft - routeMap.clientWidth * 0.62;
+      routeMap.scrollTo({
+        left: Math.max(0, targetLeft),
+        behavior: immediate ? "auto" : "smooth",
+      });
+    }
+
     function updateSelectedStationText() {
       selectedStationText.textContent = `${selectedStation.name}・${LINE_NAMES[selectedStation.line]}`;
     }
@@ -931,16 +1019,17 @@
       }
     }
 
-    function selectStation(station) {
+    function selectStation(station, options = {}) {
       selectedStation = station;
       updateSelectedStationText();
       updateMapClasses(null);
+      requestAnimationFrame(() => focusMapOnStation(station, Boolean(options.immediateFocus)));
       loadSchedule();
       loadValueRange();
     }
 
     renderRouteMap();
-    selectStation(selectedStation);
+    selectStation(selectedStation, { immediateFocus: true });
 
     refreshScheduleButton.addEventListener("click", () => loadSchedule({ quiet: true }));
 
