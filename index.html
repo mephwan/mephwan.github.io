@@ -265,7 +265,7 @@
       font-weight: 800;
       line-height: 1.1;
       transition: opacity 0.2s ease, background 0.2s ease, transform 0.2s ease, filter 0.2s ease;
-      transform: translate(-50%, -120%);
+      transform: translate(-50%, -50%);
       box-shadow: 0 1px 4px rgba(255, 255, 255, 0.8);
     }
 
@@ -291,7 +291,7 @@
       background: var(--gold);
       color: #17130b;
       border-color: #ffe09a;
-      transform: translate(-50%, -120%) scale(1.18);
+      transform: translate(-50%, -50%) scale(1.18);
       box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
     }
 
@@ -693,13 +693,24 @@
       ["AWE",341,704],["AIR",291,773],["DIS",503,785],
       ["TUC",331,831],["SUN",449,720],["TSY",529,625],["LAK",626,559],["NAC",702,636],["OLY",694,742],["KOW",688,827],["HOK",832,953],
       ["TSW",298,559],["TWH",392,559],["KWH",462,559],["KWF",552,559],["MEF",702,558],["LCK",773,559],["CSW",852,559],["SSP",930,559],["PRE",981,613],["MOK",981,666],["YMT",981,719],["JOR",980,779],["TST",980,840],["CEN",832,993],
-      ["KET",466,953],["HKU",557,953],["SYP",648,953],["SHW",740,953],["WAC",1010,953],["CAB",1102,953],["TIH",1190,953],["FOH",1283,953],["NOP",1373,953],["QUB",1462,953],["TAK",1554,953],["SWH",1644,953],["SKW",1728,1049],["HFC",1766,1138],["CHW",1766,1209],
+      ["KET",466,993],["HKU",557,993],["SYP",648,993],["SHW",740,993],["ADM",921,993],["WAC",1010,993],["CAB",1102,993],["TIH",1190,993],["FOH",1283,993],["NOP",1373,993],["QUB",1462,993],["TAK",1554,993],["SWH",1644,993],["SKW",1728,1049],["HFC",1766,1138],["CHW",1766,1209],
       ["WHA",1261,802],["HOM",1187,772],["SKM",1033,559],["KOT",1145,558],["LOF",1201,559],["WTS",1264,559],["DIH",1389,559],["CHH",1448,559],["KOB",1508,571],["NTK",1520,622],["KWT",1520,682],["LAT",1520,741],["YAT",1568,790],["TIK",1644,791],
       ["TKO",1723,789],["LHP",1767,866],["HAH",1767,684],["POA",1767,623],
       ["OCP",978,1080],["WCH",868,1128],["LET",715,1185],["SOH",611,1185],
       ["LOW",673,242],["LMC",616,273],["SHS",757,242],["FAN",840,242],["TWO",924,242],["TAP",1008,242],["UNI",1105,242],["FOT",1146,330],["SHT",1146,398],["TAW",1146,467],["MKK",1146,650],["HUH",1106,840],["EXC",1010,953],
       ["WKS",1762,242],["MOS",1674,242],["HEO",1587,242],["TSH",1501,242],["SHM",1415,242],["CIO",1328,242],["STW",1281,330],["CKT",1281,397],["HIK",1252,497],["KAT",1390,622],["SUW",1355,692],["TKW",1307,742],["ETS",1008,876],["AUS",873,831],["TWW",298,489],["KSR",267,415],["YUL",264,350],["LOP",267,291],["TIS",235,235],["SIH",200,350],["TUM",200,442]
     ];
+    const LABEL_POINTS = {
+      AWE: [325, 682], AIR: [270, 805], DIS: [492, 820],
+      TUC: [331, 868], SUN: [449, 758], TSY: [545, 655], LAK: [630, 536], NAC: [734, 654], OLY: [727, 760], KOW: [665, 834], HOK: [862, 968],
+      TSW: [298, 536], TWH: [392, 536], KWH: [462, 536], KWF: [552, 536], MEF: [702, 534], LCK: [773, 536], CSW: [852, 536], SSP: [930, 536], PRE: [945, 612], MOK: [944, 666], YMT: [944, 719], JOR: [945, 779], TST: [1010, 842], CEN: [832, 1022],
+      KET: [466, 1022], HKU: [557, 1022], SYP: [648, 1022], SHW: [740, 1022], ADM: [921, 1028], WAC: [1010, 1022], CAB: [1102, 1022], TIH: [1190, 1022], FOH: [1283, 1022], NOP: [1373, 1022], QUB: [1462, 1022], TAK: [1554, 1022], SWH: [1644, 1022], SKW: [1710, 1088], HFC: [1717, 1142], CHW: [1717, 1212],
+      WHA: [1292, 823], HOM: [1187, 742], SKM: [1058, 590], KOT: [1145, 536], LOF: [1201, 536], WTS: [1264, 536], DIH: [1389, 536], CHH: [1448, 536], KOB: [1541, 585], NTK: [1552, 638], KWT: [1552, 695], LAT: [1552, 755], YAT: [1560, 828], TIK: [1644, 822],
+      TKO: [1720, 766], LHP: [1742, 912], HAH: [1720, 698], POA: [1714, 628],
+      OCP: [1010, 1098], WCH: [868, 1156], LET: [715, 1212], SOH: [610, 1212],
+      LOW: [673, 218], LMC: [616, 307], SHS: [757, 218], FAN: [840, 270], TWO: [924, 270], TAP: [1008, 270], UNI: [1105, 270], FOT: [1115, 334], SHT: [1115, 406], TAW: [1115, 476], MKK: [1115, 653], HUH: [1142, 865], EXC: [1042, 982],
+      WKS: [1762, 270], MOS: [1674, 270], HEO: [1587, 270], TSH: [1501, 270], SHM: [1415, 270], CIO: [1328, 270], STW: [1315, 338], CKT: [1315, 407], HIK: [1252, 475], KAT: [1420, 635], SUW: [1388, 700], TKW: [1340, 750], ETS: [1042, 915], AUS: [908, 838], TWW: [330, 485], KSR: [305, 420], YUL: [302, 350], LOP: [305, 292], TIS: [252, 215], SIH: [168, 350], TUM: [232, 464]
+    };
     const FARE_PREFERRED_LINE = {
       HOK: "TCL",
       KOW: "TCL",
@@ -758,6 +769,10 @@
 
     function isCitySaverStation(station) {
       return CITY_SAVER_FULL_LINES.has(station.line) || CITY_SAVER_PARTIAL_CODES[station.line]?.has(station.code);
+    }
+
+    function getLabelPoint(code, x, y) {
+      return LABEL_POINTS[code] || [x, y];
     }
 
     function getFareStation(station) {
@@ -836,8 +851,9 @@
         button.dataset.line = station.line;
         button.dataset.code = station.code;
         button.dataset.stationId = String(station.id);
-        button.style.left = `${(x / MAP_WIDTH) * 100}%`;
-        button.style.top = `${(y / MAP_HEIGHT) * 100}%`;
+        const [labelX, labelY] = getLabelPoint(code, x, y);
+        button.style.left = `${(labelX / MAP_WIDTH) * 100}%`;
+        button.style.top = `${(labelY / MAP_HEIGHT) * 100}%`;
         button.title = `${stationText(station)}・${LINE_NAMES[station.line]}`;
         button.setAttribute("aria-label", button.title);
           button.textContent = station.name;
