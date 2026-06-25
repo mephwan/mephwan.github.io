@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>港鐵即時班次及都會票範圍</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --bg: #101113;
+      --panel: #1b1d20;
+      --panel-soft: #24282c;
+      --line: #343a40;
+      --text: #f3f5f6;
+      --muted: #a9b2bb;
+      --accent: #18b7aa;
+      --accent-strong: #12a195;
+      --gold: #f2bd4b;
+      --danger: #ff7070;
+      --shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Noto Sans HK", "Microsoft JhengHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 20px;
+      line-height: 1.55;
+    }
+
+    .page {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 28px 18px 34px;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 18px;
+    }
+
+    h1,
+    h2 {
+      margin: 0;
+      font-weight: 750;
+    }
+
+    h1 {
+      font-size: clamp(32px, 5vw, 48px);
+      color: var(--text);
+    }
+
+    h2 {
+      font-size: 28px;
+    }
+
+    .subtitle,
+    .status,
+    .source {
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .subtitle,
+    #clockText,
+    #mapPanelHeader,
+    .map-summary {
+      display: none;
+    }
+
+    header .status {
+      min-width: 180px;
+      text-align: right;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      margin-top: 18px;
+      overflow: hidden;
+    }
+
+    .section-head {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 20px;
+      background: var(--panel-soft);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .head-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    .head-actions button {
+      width: auto;
+      min-height: 42px;
+      padding: 0 16px;
+      font-size: 16px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+      gap: 14px;
+      padding: 18px 20px;
+      align-items: end;
+    }
+
+    .schedule-controls {
+      grid-template-columns: minmax(260px, 1fr) auto;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 650;
+    }
+
+    select,
+    input,
+    button {
+      width: 100%;
+      min-height: 52px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      font: inherit;
+    }
+
+    select,
+    input {
+      background: #121416;
+      color: var(--text);
+      padding: 0 14px;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      padding: 0 22px;
+      background: var(--accent);
+      color: #061312;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      background: var(--accent-strong);
+    }
+
+    button:disabled {
+      cursor: wait;
+      opacity: 0.72;
+    }
+
+    .map-summary {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      padding: 18px 20px;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .selected-station {
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .pass-note {
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .map-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      border: 2px solid var(--line);
+      background: var(--panel-soft);
+    }
+
+    .legend-dot.good {
+      background: rgba(24, 183, 170, 0.9);
+      border-color: var(--accent);
+    }
+
+    .legend-dot.bad {
+      background: rgba(255, 255, 255, 0.85);
+      border-color: #9ca3af;
+    }
+
+    .route-map {
+      position: relative;
+      padding: 20px;
+      overflow-x: auto;
+      background: #bde5ef;
+    }
+
+    .map-canvas {
+      position: relative;
+      width: min(100%, 1240px);
+      min-width: 980px;
+      aspect-ratio: 1542 / 1020;
+      margin: 0 auto;
+      background: url("assets/routemap-names-removed.png") center / contain no-repeat;
+      border-radius: 8px;
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+    }
+
+    .station-button {
+      position: relative;
+      position: absolute;
+      z-index: 2;
+      width: auto;
+      min-width: 42px;
+      min-height: 0;
+      height: auto;
+      padding: 3px 6px;
+      border: 1px solid rgba(23, 54, 93, 0.55);
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.82);
+      color: #082a5a;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.1;
+      transition: opacity 0.2s ease, background 0.2s ease, transform 0.2s ease, filter 0.2s ease;
+      transform: translate(-50%, -120%);
+      box-shadow: 0 1px 4px rgba(255, 255, 255, 0.8);
+    }
+
+    .station-button.is-reasonable {
+      background: rgba(24, 183, 170, 0.9);
+      color: #052a27;
+      border-color: #063a35;
+      box-shadow: 0 0 0 3px rgba(24, 183, 170, 0.2);
+    }
+
+    .station-button.is-unreasonable,
+    .station-button.is-out-of-scope {
+      opacity: 0.82;
+      filter: none;
+      background: rgba(255, 255, 255, 0.86);
+      border-color: rgba(117, 126, 138, 0.82);
+      color: #586170;
+    }
+
+    .station-button.is-selected {
+      opacity: 1;
+      filter: none;
+      background: var(--gold);
+      color: #17130b;
+      border-color: #ffe09a;
+      transform: translate(-50%, -120%) scale(1.18);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    .schedule-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      border-top: 1px solid var(--line);
+    }
+
+    .direction-block + .direction-block {
+      border-left: 1px solid var(--line);
+    }
+
+    .direction-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 58px;
+      padding: 14px 18px;
+      background: #16181a;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .direction-head h3 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .direction-note {
+      color: var(--muted);
+      font-size: 15px;
+      white-space: nowrap;
+    }
+
+    .schedule-grid .table-wrap {
+      min-height: 278px;
+    }
+
+    .schedule-grid table {
+      min-width: 480px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+    }
+
+    th,
+    td {
+      padding: 16px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      color: var(--muted);
+      background: #16181a;
+      font-size: 15px;
+      font-weight: 750;
+    }
+
+    td {
+      font-size: 20px;
+    }
+
+    tbody tr:hover td {
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .numeric {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--gold);
+      white-space: nowrap;
+    }
+
+    .message {
+      padding: 20px;
+      color: var(--muted);
+    }
+
+    .message.error {
+      color: var(--danger);
+    }
+
+    .fare-summary {
+      display: grid;
+      gap: 8px;
+      padding: 0 20px 18px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .fare-route {
+      color: var(--text);
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .source {
+      margin-top: 18px;
+    }
+
+    @media (max-width: 760px) {
+      body {
+        font-size: 18px;
+      }
+
+      .page {
+        padding: 18px 12px 26px;
+      }
+
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      .schedule-controls {
+        grid-template-columns: 1fr;
+      }
+
+      .schedule-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .map-summary {
+        grid-template-columns: 1fr;
+      }
+
+      .map-legend {
+        justify-content: flex-start;
+      }
+
+      .direction-block + .direction-block {
+        border-left: 0;
+        border-top: 1px solid var(--line);
+      }
+
+      h2 {
+        font-size: 24px;
+      }
+
+      td {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div>
+        <h1>港鐵即時班次及都會票範圍</h1>
+        <div class="subtitle">預設顯示將軍澳綫康城站</div>
+      </div>
+      <div class="status" id="clockText">準備載入</div>
+    </header>
+
+    <main>
+      <section class="panel" aria-labelledby="mapTitle">
+        <div class="section-head" id="mapPanelHeader">
+          <h2 id="mapTitle">選擇車站</h2>
+          <div class="status" id="rangeStatus">都會票每程成本 HK$11.5</div>
+        </div>
+        <div class="map-summary">
+          <div>
+            <div class="selected-station" id="selectedStationText">康城・將軍澳綫</div>
+            <div class="pass-note" id="passRangeText">計算都會票合理範圍中</div>
+          </div>
+          <div class="map-legend">
+            <span class="legend-item"><span class="legend-dot good"></span>合理</span>
+            <span class="legend-item"><span class="legend-dot bad"></span>不合理 / 不適用</span>
+          </div>
+        </div>
+        <div class="route-map" id="routeMap"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="scheduleTitle">
+        <div class="section-head">
+          <h2 id="scheduleTitle">即時班次</h2>
+          <div class="head-actions">
+            <div class="status" id="scheduleStatus">尚未更新</div>
+            <button id="refreshSchedule" type="button">重新整理</button>
+          </div>
+        </div>
+        <div class="schedule-grid">
+          <div class="direction-block">
+            <div class="direction-head">
+              <h3>上行</h3>
+              <span class="direction-note" id="upNote">載入中</span>
+            </div>
+            <div class="table-wrap">
+              <table aria-describedby="upNote">
+                <thead>
+                  <tr>
+                    <th>目的地</th>
+                    <th>月台</th>
+                    <th>尚餘</th>
+                    <th>預計時間</th>
+                  </tr>
+                </thead>
+                <tbody id="scheduleUpBody">
+                  <tr><td colspan="4">載入中</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="direction-block">
+            <div class="direction-head">
+              <h3>下行</h3>
+              <span class="direction-note" id="downNote">載入中</span>
+            </div>
+            <div class="table-wrap">
+              <table aria-describedby="downNote">
+                <thead>
+                  <tr>
+                    <th>目的地</th>
+                    <th>月台</th>
+                    <th>尚餘</th>
+                    <th>預計時間</th>
+                  </tr>
+                </thead>
+                <tbody id="scheduleDownBody">
+                  <tr><td colspan="4">載入中</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div class="source">
+      站點資料參考 DATA.GOV.HK「港鐵綫、車費和無障礙設施」；即時班次及都會票範圍由港鐵公開資料服務回傳。
+    </div>
+  </div>
+
+  <script src="assets/fares.js"></script>
+  <script>
+    const LINE_NAMES = {
+      AEL: "機場快綫",
+      TWL: "荃灣綫",
+      ISL: "港島綫",
+      KTL: "觀塘綫",
+      TKL: "將軍澳綫",
+      TCL: "東涌綫",
+      DRL: "迪士尼綫",
+      SIL: "南港島綫",
+      EAL: "東鐵綫",
+      TML: "屯馬綫"
+    };
+
+    const DIRECTION_NAMES = {
+      UP: "上行",
+      DOWN: "下行"
+    };
+
+    const FARE_TITLE_NAMES = {
+      standardClass: "港鐵普通等",
+      AEL: "機場快綫"
+    };
+
+    const STATION_ROWS = [
+      ["AEL","AWE",56,"博覽館","AsiaWorld-Expo"],["AEL","AIR",47,"機場","Airport"],["AEL","TSY",46,"青衣","Tsing Yi"],["AEL","KOW",45,"九龍","Kowloon"],["AEL","HOK",44,"香港","Hong Kong"],
+      ["TWL","TSW",25,"荃灣","Tsuen Wan"],["TWL","TWH",24,"大窩口","Tai Wo Hau"],["TWL","KWH",23,"葵興","Kwai Hing"],["TWL","KWF",22,"葵芳","Kwai Fong"],["TWL","LAK",21,"茘景","Lai King"],["TWL","MEF",20,"美孚","Mei Foo"],["TWL","LCK",19,"茘枝角","Lai Chi Kok"],["TWL","CSW",18,"長沙灣","Cheung Sha Wan"],["TWL","SSP",17,"深水埗","Sham Shui Po"],["TWL","PRE",16,"太子","Prince Edward"],["TWL","MOK",6,"旺角","Mong Kok"],["TWL","YMT",5,"油麻地","Yau Ma Tei"],["TWL","JOR",4,"佐敦","Jordan"],["TWL","TST",3,"尖沙咀","Tsim Sha Tsui"],["TWL","ADM",2,"金鐘","Admiralty"],["TWL","CEN",1,"中環","Central"],
+      ["ISL","CHW",37,"柴灣","Chai Wan"],["ISL","HFC",36,"杏花邨","Heng Fa Chuen"],["ISL","SKW",35,"筲箕灣","Shau Kei Wan"],["ISL","SWH",34,"西灣河","Sai Wan Ho"],["ISL","TAK",33,"太古","Tai Koo"],["ISL","QUB",32,"鰂魚涌","Quarry Bay"],["ISL","NOP",31,"北角","North Point"],["ISL","FOH",30,"炮台山","Fortress Hill"],["ISL","TIH",29,"天后","Tin Hau"],["ISL","CAB",28,"銅鑼灣","Causeway Bay"],["ISL","WAC",27,"灣仔","Wan Chai"],["ISL","ADM",2,"金鐘","Admiralty"],["ISL","CEN",1,"中環","Central"],["ISL","SHW",26,"上環","Sheung Wan"],["ISL","SYP",81,"西營盤","Sai Ying Pun"],["ISL","HKU",82,"香港大學","HKU"],["ISL","KET",83,"堅尼地城","Kennedy Town"],
+      ["KTL","TIK",49,"調景嶺","Tiu Keng Leng"],["KTL","YAT",48,"油塘","Yau Tong"],["KTL","LAT",38,"藍田","Lam Tin"],["KTL","KWT",15,"觀塘","Kwun Tong"],["KTL","NTK",14,"牛頭角","Ngau Tau Kok"],["KTL","KOB",13,"九龍灣","Kowloon Bay"],["KTL","CHH",12,"彩虹","Choi Hung"],["KTL","DIH",11,"鑽石山","Diamond Hill"],["KTL","WTS",10,"黃大仙","Wong Tai Sin"],["KTL","LOF",9,"樂富","Lok Fu"],["KTL","KOT",8,"九龍塘","Kowloon Tong"],["KTL","SKM",7,"石硤尾","Shek Kip Mei"],["KTL","PRE",16,"太子","Prince Edward"],["KTL","MOK",6,"旺角","Mong Kok"],["KTL","YMT",5,"油麻地","Yau Ma Tei"],["KTL","HOM",84,"何文田","Ho Man Tin"],["KTL","WHA",85,"黃埔","Whampoa"],
+      ["TKL","POA",52,"寶琳","Po Lam"],["TKL","HAH",51,"坑口","Hang Hau"],["TKL","TKO",50,"將軍澳","Tseung Kwan O"],["TKL","TIK",49,"調景嶺","Tiu Keng Leng"],["TKL","YAT",48,"油塘","Yau Tong"],["TKL","QUB",32,"鰂魚涌","Quarry Bay"],["TKL","NOP",31,"北角","North Point"],["TKL","LHP",57,"康城","LOHAS Park"],
+      ["TCL","TUC",43,"東涌","Tung Chung"],["TCL","SUN",54,"欣澳","Sunny Bay"],["TCL","TSY",42,"青衣","Tsing Yi"],["TCL","LAK",21,"茘景","Lai King"],["TCL","NAC",53,"南昌","Nam Cheong"],["TCL","OLY",41,"奧運","Olympic"],["TCL","KOW",40,"九龍","Kowloon"],["TCL","HOK",39,"香港","Hong Kong"],
+      ["DRL","SUN",54,"欣澳","Sunny Bay"],["DRL","DIS",55,"迪士尼","Disneyland Resort"],
+      ["SIL","ADM",2,"金鐘","Admiralty"],["SIL","OCP",86,"海洋公園","Ocean Park"],["SIL","WCH",87,"黃竹坑","Wong Chuk Hang"],["SIL","LET",88,"利東","Lei Tung"],["SIL","SOH",89,"海怡半島","South Horizons"],
+      ["EAL","LOW",76,"羅湖","Lo Wu"],["EAL","SHS",75,"上水","Sheung Shui"],["EAL","FAN",74,"粉嶺","Fanling"],["EAL","TWO",73,"太和","Tai Wo"],["EAL","TAP",72,"大埔墟","Tai Po Market"],["EAL","UNI",71,"大學","University"],["EAL","FOT",69,"火炭","Fo Tan"],["EAL","SHT",68,"沙田","Sha Tin"],["EAL","TAW",67,"大圍","Tai Wai"],["EAL","KOT",8,"九龍塘","Kowloon Tong"],["EAL","MKK",65,"旺角東","Mong Kok East"],["EAL","HUH",64,"紅磡","Hung Hom"],["EAL","EXC",94,"會展","Exhibition Centre"],["EAL","ADM",2,"金鐘","Admiralty"],["EAL","LMC",78,"落馬洲","Lok Ma Chau"],
+      ["TML","WKS",103,"烏溪沙","Wu Kai Sha"],["TML","MOS",102,"馬鞍山","Ma On Shan"],["TML","HEO",101,"恆安","Heng On"],["TML","TSH",100,"大水坑","Tai Shui Hang"],["TML","SHM",99,"石門","Shek Mun"],["TML","CIO",98,"第一城","City One"],["TML","STW",97,"沙田圍","Sha Tin Wai"],["TML","CKT",96,"車公廟","Che Kung Temple"],["TML","TAW",67,"大圍","Tai Wai"],["TML","HIK",90,"顯徑","Hin Keng"],["TML","DIH",11,"鑽石山","Diamond Hill"],["TML","KAT",91,"啟德","Kai Tak"],["TML","SUW",92,"宋皇臺","Sung Wong Toi"],["TML","TKW",93,"土瓜灣","To Kwa Wan"],["TML","HOM",84,"何文田","Ho Man Tin"],["TML","HUH",64,"紅磡","Hung Hom"],["TML","ETS",80,"尖東","East Tsim Sha Tsui"],["TML","AUS",111,"柯士甸","Austin"],["TML","NAC",53,"南昌","Nam Cheong"],["TML","MEF",20,"美孚","Mei Foo"],["TML","TWW",114,"荃灣西","Tsuen Wan West"],["TML","KSR",115,"錦上路","Kam Sheung Road"],["TML","YUL",116,"元朗","Yuen Long"],["TML","LOP",117,"朗屏","Long Ping"],["TML","TIS",118,"天水圍","Tin Shui Wai"],["TML","SIH",119,"兆康","Siu Hong"],["TML","TUM",120,"屯門","Tuen Mun"]
+    ].map(([line, code, id, name, en]) => ({ line, code, id, name, en }));
+
+    const PASS_TRIP_COST = 11.5;
+    const LINE_COLORS = {
+      AEL: "#1C7670",
+      TWL: "#ff2a2a",
+      ISL: "#0860A8",
+      KTL: "#1A9431",
+      TKL: "#7a2a90",
+      TCL: "#FE7F1D",
+      DRL: "#F550A6",
+      SIL: "#B5BD00",
+      EAL: "#5EB6E4",
+      TML: "#923011"
+    };
+    const MAP_WIDTH = 1919;
+    const MAP_HEIGHT = 1269;
+    const POINT_LINE_BY_CODE = {
+      HOK: "TCL",
+      KOW: "TCL",
+      TSY: "TCL",
+      LAK: "TCL",
+      NAC: "TCL",
+      ADM: "ISL",
+      HUH: "TML",
+      DIH: "TML",
+      HOM: "TML",
+      MEF: "TML",
+      TIK: "TKL",
+      YAT: "TKL",
+      QUB: "TKL",
+      NOP: "TKL",
+      TAW: "TML",
+      KOT: "EAL"
+    };
+    const MAP_POINTS = [
+      ["AWE",341,704],["AIR",291,773],["DIS",503,785],
+      ["TUC",331,831],["SUN",449,720],["TSY",529,625],["LAK",626,559],["NAC",702,636],["OLY",694,742],["KOW",688,827],["HOK",832,953],
+      ["TSW",298,559],["TWH",392,559],["KWH",462,559],["KWF",552,559],["MEF",702,558],["LCK",773,559],["CSW",852,559],["SSP",930,559],["PRE",981,613],["MOK",981,666],["YMT",981,719],["JOR",980,779],["TST",980,840],["CEN",832,993],
+      ["KET",466,953],["HKU",557,953],["SYP",648,953],["SHW",740,953],["WAC",1010,953],["CAB",1102,953],["TIH",1190,953],["FOH",1283,953],["NOP",1373,953],["QUB",1462,953],["TAK",1554,953],["SWH",1644,953],["SKW",1728,1049],["HFC",1766,1138],["CHW",1766,1209],
+      ["WHA",1261,802],["HOM",1187,772],["SKM",1033,559],["KOT",1145,558],["LOF",1201,559],["WTS",1264,559],["DIH",1389,559],["CHH",1448,559],["KOB",1508,571],["NTK",1520,622],["KWT",1520,682],["LAT",1520,741],["YAT",1568,790],["TIK",1644,791],
+      ["TKO",1723,789],["LHP",1767,866],["HAH",1767,684],["POA",1767,623],
+      ["OCP",978,1080],["WCH",868,1128],["LET",715,1185],["SOH",611,1185],
+      ["LOW",673,242],["LMC",616,273],["SHS",757,242],["FAN",840,242],["TWO",924,242],["TAP",1008,242],["UNI",1105,242],["FOT",1146,330],["SHT",1146,398],["TAW",1146,467],["MKK",1146,650],["HUH",1106,840],["EXC",1010,953],
+      ["WKS",1762,242],["MOS",1674,242],["HEO",1587,242],["TSH",1501,242],["SHM",1415,242],["CIO",1328,242],["STW",1281,330],["CKT",1281,397],["HIK",1252,497],["KAT",1390,622],["SUW",1355,692],["TKW",1307,742],["ETS",1008,876],["AUS",873,831],["TWW",298,489],["KSR",267,415],["YUL",264,350],["LOP",267,291],["TIS",235,235],["SIH",200,350],["TUM",200,442]
+    ];
+    const FARE_PREFERRED_LINE = {
+      HOK: "TCL",
+      KOW: "TCL",
+      TSY: "TCL",
+      LAK: "TCL",
+      NAC: "TCL",
+      ADM: "ISL",
+      HUH: "TML",
+      DIH: "TML",
+      HOM: "TML",
+      MEF: "TML"
+    };
+
+    const stationByCode = new Map();
+    const stationById = new Map();
+    const stationByLineCode = new Map();
+    const stationsByLine = new Map();
+    const valueStationByCode = new Map();
+    const fareCache = new Map();
+    const valueRangeCache = new Map();
+
+    for (const station of STATION_ROWS) {
+      if (!stationByCode.has(station.code)) stationByCode.set(station.code, station);
+      if (!stationById.has(station.id)) stationById.set(station.id, station);
+      stationByLineCode.set(`${station.line}|${station.code}`, station);
+      if (!stationsByLine.has(station.line)) stationsByLine.set(station.line, []);
+      stationsByLine.get(station.line).push(station);
+
+      if (station.line !== "AEL") {
+        const preferredLine = FARE_PREFERRED_LINE[station.code];
+        const current = valueStationByCode.get(station.code);
+        if (!current || station.line === preferredLine || (!preferredLine && current.line === "AEL")) {
+          valueStationByCode.set(station.code, station);
+        }
+      }
+    }
+
+    const routeMap = document.querySelector("#routeMap");
+    const selectedStationText = document.querySelector("#selectedStationText");
+    const passRangeText = document.querySelector("#passRangeText");
+    const rangeStatus = document.querySelector("#rangeStatus");
+    const scheduleUpBody = document.querySelector("#scheduleUpBody");
+    const scheduleDownBody = document.querySelector("#scheduleDownBody");
+    const upNote = document.querySelector("#upNote");
+    const downNote = document.querySelector("#downNote");
+    const scheduleStatus = document.querySelector("#scheduleStatus");
+    const refreshScheduleButton = document.querySelector("#refreshSchedule");
+    const clockText = document.querySelector("#clockText");
+    let selectedStation = stationByLineCode.get("TKL|LHP");
+    let scheduleRequestId = 0;
+    let rangeRequestId = 0;
+
+    function stationText(station) {
+      return `${station.name} ${station.en}`;
+    }
+
+    function getFareStation(station) {
+      return valueStationByCode.get(station.code) || station;
+    }
+
+    function formatClock(date = new Date()) {
+      return date.toLocaleTimeString("zh-HK", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    }
+
+    function formatApiTime(value) {
+      if (!value) return "--:--";
+      const timePart = value.includes(" ") ? value.split(" ")[1] : value;
+      return timePart.slice(0, 5);
+    }
+
+    function addCell(row, text, className = "") {
+      const cell = document.createElement("td");
+      cell.textContent = text;
+      if (className) cell.className = className;
+      row.appendChild(cell);
+    }
+
+    function setDirectionMessage(body, note, text, isError = false) {
+      body.innerHTML = "";
+      const row = document.createElement("tr");
+      const cell = document.createElement("td");
+      cell.colSpan = 4;
+      cell.textContent = text;
+      cell.className = isError ? "message error" : "message";
+      row.appendChild(cell);
+      body.appendChild(row);
+      note.textContent = isError ? "讀取失敗" : text;
+    }
+
+    function renderScheduleDirection(direction, trains) {
+      const body = direction === "UP" ? scheduleUpBody : scheduleDownBody;
+      const note = direction === "UP" ? upNote : downNote;
+      const sortedTrains = [...(trains || [])]
+        .sort((a, b) => String(a.time || "").localeCompare(String(b.time || "")));
+
+      if (!sortedTrains.length) {
+        setDirectionMessage(body, note, "暫無班次");
+        return;
+      }
+
+      body.innerHTML = "";
+      note.textContent = `${sortedTrains.length} 班`;
+
+      for (const train of sortedTrains) {
+        const row = document.createElement("tr");
+        const destination = stationByCode.get(train.dest)?.name || train.dest || "-";
+        const minutes = train.ttnt === "0" ? "即將" : `${train.ttnt || "-"} 分鐘`;
+
+        addCell(row, destination);
+        addCell(row, train.plat || "-");
+        addCell(row, minutes, "numeric");
+        addCell(row, formatApiTime(train.time));
+        body.appendChild(row);
+      }
+    }
+
+    function renderRouteMap() {
+      routeMap.innerHTML = "";
+      const canvas = document.createElement("div");
+      canvas.className = "map-canvas";
+
+      for (const [code, x, y] of MAP_POINTS) {
+        const line = POINT_LINE_BY_CODE[code] || stationByCode.get(code)?.line;
+        const station = stationByLineCode.get(`${line}|${code}`) || stationByCode.get(code);
+        if (!station) continue;
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "station-button";
+        button.dataset.line = station.line;
+        button.dataset.code = station.code;
+        button.dataset.stationId = String(station.id);
+        button.style.left = `${(x / MAP_WIDTH) * 100}%`;
+        button.style.top = `${(y / MAP_HEIGHT) * 100}%`;
+        button.title = `${stationText(station)}・${LINE_NAMES[station.line]}`;
+        button.setAttribute("aria-label", button.title);
+          button.textContent = station.name;
+        button.addEventListener("click", () => selectStation(station));
+        canvas.appendChild(button);
+      }
+
+      routeMap.appendChild(canvas);
+    }
+
+    function updateSelectedStationText() {
+      selectedStationText.textContent = `${selectedStation.name}・${LINE_NAMES[selectedStation.line]}`;
+    }
+
+    function updateMapClasses(reasonableCodes = null) {
+      const buttons = routeMap.querySelectorAll(".station-button");
+      for (const button of buttons) {
+        const code = button.dataset.code;
+        const line = button.dataset.line;
+        const inScope = valueStationByCode.has(code);
+        const isSelected = selectedStation && selectedStation.code === code && selectedStation.line === line;
+
+        button.classList.toggle("is-selected", isSelected);
+        button.classList.toggle("is-out-of-scope", !inScope);
+        button.classList.remove("is-reasonable", "is-unreasonable");
+
+        if (reasonableCodes && inScope && !isSelected) {
+          button.classList.toggle("is-reasonable", reasonableCodes.has(code));
+          button.classList.toggle("is-unreasonable", !reasonableCodes.has(code));
+        }
+      }
+    }
+
+    async function asyncPool(limit, items, worker) {
+      const results = [];
+      const executing = [];
+
+      for (const item of items) {
+        const promise = Promise.resolve().then(() => worker(item));
+        results.push(promise);
+        executing.push(promise);
+
+        promise.finally(() => {
+          const index = executing.indexOf(promise);
+          if (index >= 0) executing.splice(index, 1);
+        });
+
+        if (executing.length >= limit) await Promise.race(executing);
+      }
+
+      return Promise.all(results);
+    }
+
+    async function fetchAdultOctopusFare(fromId, toId) {
+      if (fromId === toId) return 0;
+
+      const key = `${fromId}-${toId}`;
+      const reverseKey = `${toId}-${fromId}`;
+      if (fareCache.has(key)) return fareCache.get(key);
+      if (fareCache.has(reverseKey)) return fareCache.get(reverseKey);
+
+      const localFare = window.MTR_FARES?.[key] ?? window.MTR_FARES?.[reverseKey];
+      if (localFare !== undefined) {
+        const fare = Number(localFare);
+        fareCache.set(key, Number.isFinite(fare) ? fare : 0);
+        return fareCache.get(key);
+      }
+
+      const url = `https://www.mtr.com.hk/share/customer/jp/api/HRRoutes/?o=${fromId}&d=${toId}&lang=C`;
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const data = await response.json();
+      if (String(data.errorCode) !== "0") throw new Error(data.errorMsg || "MTR fare API error");
+
+      const route = data.routes?.[0] || {};
+      const standardFare = (route.fares || []).find((fare) => fare.fareTitle === "standardClass") || route.fares?.[0];
+      const rawFare = standardFare?.fareInfo?.adult?.octopus;
+      const fare = Number.parseFloat(rawFare);
+      const result = Number.isFinite(fare) ? fare : 0;
+      fareCache.set(key, result);
+      return result;
+    }
+
+    async function calculateValueRange(originStation) {
+      const cacheKey = String(originStation.id);
+      if (valueRangeCache.has(cacheKey)) return valueRangeCache.get(cacheKey);
+
+      const reasonableCodes = new Set();
+      const targetStations = Array.from(valueStationByCode.values());
+
+      await asyncPool(8, targetStations, async (targetStation) => {
+        const fare = await fetchAdultOctopusFare(originStation.id, targetStation.id);
+        if (fare >= PASS_TRIP_COST) reasonableCodes.add(targetStation.code);
+      });
+
+      valueRangeCache.set(cacheKey, reasonableCodes);
+      return reasonableCodes;
+    }
+
+    async function loadValueRange() {
+      const requestId = ++rangeRequestId;
+      const originStation = getFareStation(selectedStation);
+
+      updateMapClasses(null);
+
+      if (!originStation) {
+        rangeStatus.textContent = "未有票價資料";
+        passRangeText.textContent = `${selectedStation.name} 未有可用票價資料，暫時未能分類合理範圍`;
+        updateMapClasses(new Set());
+        return;
+      }
+
+      rangeStatus.textContent = window.MTR_FARES_UPDATED ? `本地票價 ${window.MTR_FARES_UPDATED}` : "即時計算中";
+      passRangeText.textContent = `${originStation.name} 出發，計算達到 HK$11.5 門檻的範圍中`;
+
+      try {
+        const reasonableCodes = await calculateValueRange(originStation);
+        if (requestId !== rangeRequestId) return;
+
+        updateMapClasses(reasonableCodes);
+        rangeStatus.textContent = `合理 ${reasonableCodes.size} 站`;
+        passRangeText.textContent = `${originStation.name} 出發：成人八達通正價達 HK$11.5 或以上列為都會票合理站`;
+      } catch (error) {
+        if (requestId !== rangeRequestId) return;
+        rangeStatus.textContent = "範圍計算失敗";
+        passRangeText.textContent = "未能計算都會票範圍，保留路線圖選站功能";
+        updateMapClasses(null);
+        console.error(error);
+      }
+    }
+
+    async function loadSchedule(options = {}) {
+      const quiet = Boolean(options.quiet);
+      const requestId = ++scheduleRequestId;
+      const line = selectedStation.line;
+      const station = selectedStation.code;
+      const stationName = selectedStation.name;
+
+      if (!quiet) {
+        setDirectionMessage(scheduleUpBody, upNote, "載入中");
+        setDirectionMessage(scheduleDownBody, downNote, "載入中");
+      }
+
+      refreshScheduleButton.disabled = !quiet;
+      scheduleStatus.textContent = `${LINE_NAMES[line]}・${stationName} 更新中`;
+
+      try {
+        const url = `https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=${line.toLowerCase()}&sta=${station}`;
+        const response = await fetch(url, { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const json = await response.json();
+        const key = `${line}-${station}`;
+        const payload = json.data?.[key];
+        if (requestId !== scheduleRequestId) return;
+
+        if (!payload) {
+          setDirectionMessage(scheduleUpBody, upNote, "未有資料");
+          setDirectionMessage(scheduleDownBody, downNote, "未有資料");
+          scheduleStatus.textContent = `${LINE_NAMES[line]}・${stationName} 未有資料`;
+          return;
+        }
+
+        renderScheduleDirection("UP", payload.UP || []);
+        renderScheduleDirection("DOWN", payload.DOWN || []);
+
+        const updatedAt = payload.curr_time || json.curr_time || json.sys_time;
+        scheduleStatus.textContent = `${LINE_NAMES[line]}・${stationName} 最後更新 ${formatApiTime(updatedAt)}`;
+      } catch (error) {
+        if (!quiet) {
+          setDirectionMessage(scheduleUpBody, upNote, "無法載入資料", true);
+          setDirectionMessage(scheduleDownBody, downNote, "無法載入資料", true);
+          scheduleStatus.textContent = "班次更新失敗";
+        } else {
+          scheduleStatus.textContent = "更新失敗，保留上次資料";
+        }
+        console.error(error);
+      } finally {
+        if (requestId === scheduleRequestId) refreshScheduleButton.disabled = false;
+        clockText.textContent = `本機時間 ${formatClock()}`;
+      }
+    }
+
+    function selectStation(station) {
+      selectedStation = station;
+      updateSelectedStationText();
+      updateMapClasses(null);
+      loadSchedule();
+      loadValueRange();
+    }
+
+    renderRouteMap();
+    selectStation(selectedStation);
+
+    refreshScheduleButton.addEventListener("click", () => loadSchedule({ quiet: true }));
+
+    setInterval(() => loadSchedule({ quiet: true }), 10000);
+    setInterval(() => {
+      clockText.textContent = `本機時間 ${formatClock()}`;
+    }, 1000);
+  </script>
+</body>
+</html>
