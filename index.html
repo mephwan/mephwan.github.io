@@ -651,6 +651,12 @@
     ].map(([line, code, id, name, en]) => ({ line, code, id, name, en }));
 
     const PASS_TRIP_COST = 11.5;
+    const CITY_SAVER_FULL_LINES = new Set(["ISL", "SIL", "TWL", "KTL", "TKL"]);
+    const CITY_SAVER_PARTIAL_CODES = {
+      TCL: new Set(["HOK", "KOW", "OLY", "NAC", "LAK", "TSY"]),
+      EAL: new Set(["ADM", "EXC", "HUH", "MKK", "KOT"]),
+      TML: new Set(["DIH", "KAT", "SUW", "TKW", "HOM", "HUH", "ETS", "AUS", "NAC", "MEF", "TWW"])
+    };
     const LINE_COLORS = {
       AEL: "#1C7670",
       TWL: "#ff2a2a",
@@ -722,10 +728,10 @@
       if (!stationsByLine.has(station.line)) stationsByLine.set(station.line, []);
       stationsByLine.get(station.line).push(station);
 
-      if (station.line !== "AEL") {
+      if (isCitySaverStation(station)) {
         const preferredLine = FARE_PREFERRED_LINE[station.code];
         const current = valueStationByCode.get(station.code);
-        if (!current || station.line === preferredLine || (!preferredLine && current.line === "AEL")) {
+        if (!current || station.line === preferredLine) {
           valueStationByCode.set(station.code, station);
         }
       }
@@ -750,8 +756,12 @@
       return `${station.name} ${station.en}`;
     }
 
+    function isCitySaverStation(station) {
+      return CITY_SAVER_FULL_LINES.has(station.line) || CITY_SAVER_PARTIAL_CODES[station.line]?.has(station.code);
+    }
+
     function getFareStation(station) {
-      return valueStationByCode.get(station.code) || station;
+      return valueStationByCode.get(station.code);
     }
 
     function formatClock(date = new Date()) {
@@ -952,14 +962,14 @@
       updateMapClasses(null);
 
       if (!originStation) {
-        rangeStatus.textContent = "未有票價資料";
-        passRangeText.textContent = `${selectedStation.name} 未有可用票價資料，暫時未能分類合理範圍`;
+        rangeStatus.textContent = "不適用";
+        passRangeText.textContent = `${selectedStation.name} 不屬都會票適用站，仍可查看即時班次`;
         updateMapClasses(new Set());
         return;
       }
 
       rangeStatus.textContent = window.MTR_FARES_UPDATED ? `本地票價 ${window.MTR_FARES_UPDATED}` : "即時計算中";
-      passRangeText.textContent = `${originStation.name} 出發，計算達到 HK$11.5 門檻的範圍中`;
+      passRangeText.textContent = `${originStation.name} 出發：正在按都會票適用站及 HK$11.5 門檻分類`;
 
       try {
         const reasonableCodes = await calculateValueRange(originStation);
@@ -967,7 +977,7 @@
 
         updateMapClasses(reasonableCodes);
         rangeStatus.textContent = `合理 ${reasonableCodes.size} 站`;
-        passRangeText.textContent = `${originStation.name} 出發：成人八達通正價達 HK$11.5 或以上列為都會票合理站`;
+        passRangeText.textContent = `${originStation.name} 出發：只計都會票適用站，成人八達通正價達 HK$11.5 或以上列為合理`;
       } catch (error) {
         if (requestId !== rangeRequestId) return;
         rangeStatus.textContent = "範圍計算失敗";
