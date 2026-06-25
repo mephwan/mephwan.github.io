@@ -71,10 +71,10 @@
       font-size: 16px;
     }
 
+    header,
     .subtitle,
     #clockText,
-    #mapPanelHeader,
-    .map-summary {
+    #mapPanelHeader {
       display: none;
     }
 
@@ -90,6 +90,10 @@
       box-shadow: var(--shadow);
       margin-top: 18px;
       overflow: hidden;
+    }
+
+    main > .panel:first-child {
+      margin-top: 0;
     }
 
     .section-head {
@@ -180,7 +184,7 @@
       gap: 14px;
       padding: 18px 20px;
       align-items: center;
-      border-bottom: 1px solid var(--line);
+      border-top: 1px solid var(--line);
     }
 
     .selected-station {
@@ -404,7 +408,13 @@
       }
 
       .page {
-        padding: 18px 12px 26px;
+        padding: 0 0 22px;
+      }
+
+      .panel {
+        border-left: 0;
+        border-right: 0;
+        border-radius: 0;
       }
 
       .controls {
@@ -428,7 +438,7 @@
       }
 
       .route-map {
-        padding: 10px 0 12px;
+        padding: 8px 0;
         scroll-padding-inline: 16px;
       }
 
@@ -529,6 +539,7 @@
           <h2 id="mapTitle">選擇車站</h2>
           <div class="status" id="rangeStatus">都會票每程成本 HK$11.5</div>
         </div>
+        <div class="route-map" id="routeMap"></div>
         <div class="map-summary">
           <div>
             <div class="selected-station" id="selectedStationText">康城・將軍澳綫</div>
@@ -539,7 +550,6 @@
             <span class="legend-item"><span class="legend-dot bad"></span>不合理 / 不適用</span>
           </div>
         </div>
-        <div class="route-map" id="routeMap"></div>
       </section>
 
       <section class="panel" aria-labelledby="scheduleTitle">
